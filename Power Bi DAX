@@ -138,6 +138,44 @@ RETURN
 AVERAGEX(UserSubs, [LTV])
 
 
+ChurnRate_ByPlan = 
+VAR CurrentMonth = EOMONTH(MAX(DateTable[Date]), 0)
+VAR PreviousMonth = EOMONTH(MAX(DateTable[Date]), -1)
+
+VAR ActiveAtStart = 
+    CALCULATE(
+        DISTINCTCOUNT(Subscriptions[user_id]),
+        Subscriptions[start_date] <= PreviousMonth,
+        Subscriptions[end_date] >= PreviousMonth,
+        ALLEXCEPT(Subscriptions, Subscriptions[plan_type])
+    )
+
+VAR ChurnedUsers = 
+    CALCULATE(
+        DISTINCTCOUNT(Subscriptions[user_id]),
+        Subscriptions[start_date] <= PreviousMonth,
+        Subscriptions[end_date] >= PreviousMonth,
+        Subscriptions[end_date] <= CurrentMonth,
+        Subscriptions[end_date] > PreviousMonth,
+        ALLEXCEPT(Subscriptions, Subscriptions[plan_type])
+    )
+
+RETURN
+IF(
+    ActiveAtStart = 0,
+    BLANK(),
+    DIVIDE(ChurnedUsers, ActiveAtStart, 0)
+)
+
+
+
+
+
+
+
+
+
+
 
 
 
