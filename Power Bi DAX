@@ -138,6 +138,35 @@ RETURN
 AVERAGEX(UserSubs, [LTV])
 
 
+// 1. Overall Churn Rate (for main KPI)
+ChurnRate_Main = 
+VAR CurrentMonth = EOMONTH(MAX(DateTable[Date]), 0)
+VAR PreviousMonth = EOMONTH(MAX(DateTable[Date]), -1)
+
+VAR ActiveAtStart = 
+    CALCULATE(
+        DISTINCTCOUNT(Subscriptions[user_id]),
+        Subscriptions[start_date] <= PreviousMonth,
+        Subscriptions[end_date] >= PreviousMonth
+    )
+
+VAR ChurnedUsers = 
+    CALCULATE(
+        DISTINCTCOUNT(Subscriptions[user_id]),
+        Subscriptions[start_date] <= PreviousMonth,
+        Subscriptions[end_date] >= PreviousMonth,
+        Subscriptions[end_date] <= CurrentMonth,
+        Subscriptions[end_date] > PreviousMonth
+    )
+
+RETURN
+IF(
+    ActiveAtStart = 0,
+    BLANK(),
+    DIVIDE(ChurnedUsers, ActiveAtStart, 0)
+)
+
+// 2. Churn Rate by Plan Type (Method 4)
 ChurnRate_ByPlan = 
 VAR CurrentMonth = EOMONTH(MAX(DateTable[Date]), 0)
 VAR PreviousMonth = EOMONTH(MAX(DateTable[Date]), -1)
@@ -167,16 +196,48 @@ IF(
     DIVIDE(ChurnedUsers, ActiveAtStart, 0)
 )
 
+// 3. Individual Plan Churn Rates
+ChurnRate_Basic = 
+CALCULATE(
+    [ChurnRate_ByPlan],
+    Subscriptions[plan_type] = "Basic"
+)
 
+ChurnRate_Premium = 
+CALCULATE(
+    [ChurnRate_ByPlan],
+    Subscriptions[plan_type] = "Premium"
+)
 
+ChurnRate_Pro = 
+CALCULATE(
+    [ChurnRate_ByPlan],
+    Subscriptions[plan_type] = "Pro"
+)
 
+// 4. Color Coding for KPI
+ChurnRate_Color = 
+VAR Churn = [ChurnRate_Main]
+RETURN
+SWITCH(
+    TRUE(),
+    ISBLANK(Churn), "#808080",    // Gray
+    Churn <= 0.02, "#27AE60",     // Green
+    Churn <= 0.05, "#F39C12",     // Orange
+    Churn > 0.05, "#E74C3C",      // Red
+    "#95A5A6"
+)
 
-
-
-
-
-
-
-
-
+// 5. Status Text
+ChurnRate_Status = 
+VAR Churn = [ChurnRate_Main]
+RETURN
+SWITCH(
+    TRUE(),
+    ISBLANK(Churn), "No Data",
+    Churn <= 0.02, "✅ Excellent",
+    Churn <= 0.05, "⚠️ Warning",
+    Churn > 0.05, "🔴 Critical",
+    "Unknown"
+)
 
