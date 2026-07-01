@@ -1,37 +1,38 @@
 ## Subscriber Analytics Dashboard – Optimization Journal
 # Project Summary
-- Dataset: ~94,000 subscriptions
-- Tool: Power BI
-- Goal: Analyze subscriptions, churn, retention, revenue and optimize report performance.
-Model Review
-Fact Table
+* Dataset: ~94,000 subscriptions
+* Tool: Power BI
+* Goal: Analyze subscriptions, churn, retention, revenue and optimize report performance.
+* Model Review
+
+### Fact Table
 
 subscriptions_balanced_94k
 
 Contains:
 
-start_date
-end_date
-plan_type
-user_id
-...
+* start_date
+* end_date
+* plan_type
+* user_id
+* plan_type
 
-Reason:
+### Reason:
 
 This is the transactional table where each row represents one subscription.
 
-DateTable
+## DateTable
 
-Purpose:
+### Purpose:
 
 Provides a dedicated calendar table so all time-based calculations (monthly growth, churn, trends) use a consistent date dimension.
 
 Why not use start_date directly?
 
-Better time intelligence
-Cleaner DAX
-Easier slicing/filtering
-Best practice in Power BI
+* Better time intelligence
+* Cleaner DAX
+* Easier slicing/filtering
+* Best practice in Power BI
 
 Status:
 
@@ -45,14 +46,22 @@ Measure Review
 
 Now each measure gets its own page or section.
 
-ActiveSubscriptions
+### ActiveSubscriptions
 Business Question
 
 How many subscriptions were active during the selected period?
 
 Original Measure
 
-(Paste the original DAX.)
+ActiveSubscriptions = 
+CALCULATE(
+    COUNTROWS(Subscriptions),
+    FILTER(
+        Subscriptions,
+        Subscriptions[start_date] <= MAX(DateTable[Date]) &&
+        Subscriptions[end_date] >= MIN(DateTable[Date])
+    )
+)
 
 How it Works
 Counts rows in Subscriptions.
