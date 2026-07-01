@@ -1,0 +1,144 @@
+
+ActiveSubscriptions = 
+CALCULATE(
+    COUNTROWS(Subscriptions),
+    FILTER(
+        Subscriptions,
+        Subscriptions[start_date] <= MAX(DateTable[Date]) &&
+        Subscriptions[end_date] >= MIN(DateTable[Date])
+    )
+)
+
+AvgSubscriptionDuration = 
+AVERAGEX(
+    Subscriptions,
+    DATEDIFF(Subscriptions[start_date], Subscriptions[end_date], DAY)
+)
+
+ChurnRate = 
+VAR CurrentPeriod = 
+    CALCULATE(
+        COUNTROWS(Subscriptions),
+        FILTER(
+            Subscriptions,
+            Subscriptions[end_date] >= EDATE(TODAY(), -1) &&
+            Subscriptions[end_date] <= TODAY()
+        )
+    )
+VAR PreviousPeriod = 
+    CALCULATE(
+        COUNTROWS(Subscriptions),
+        FILTER(
+            Subscriptions,
+            Subscriptions[end_date] >= EDATE(TODAY(), -2) &&
+            Subscriptions[end_date] <= EDATE(TODAY(), -1)
+        )
+    )
+RETURN
+DIVIDE(CurrentPeriod - PreviousPeriod, PreviousPeriod, 0)
+
+
+MonthlyGrowthRate = 
+VAR CurrentMonth = 
+    CALCULATE(
+        COUNTROWS(Subscriptions),
+        FILTER(
+            Subscriptions,
+            YEAR(Subscriptions[start_date]) = YEAR(MAX(DateTable[Date])) &&
+            MONTH(Subscriptions[start_date]) = MONTH(MAX(DateTable[Date]))
+        )
+    )
+VAR PreviousMonth = 
+    CALCULATE(
+        COUNTROWS(Subscriptions),
+        FILTER(
+            Subscriptions,
+            YEAR(Subscriptions[start_date]) = YEAR(EDATE(MAX(DateTable[Date]), -1)) &&
+            MONTH(Subscriptions[start_date]) = MONTH(EDATE(MAX(DateTable[Date]), -1))
+        )
+    )
+RETURN
+DIVIDE(CurrentMonth - PreviousMonth, PreviousMonth, 0)
+
+PlanDistribution = 
+VAR TotalSubs = COUNTROWS(ALL(Subscriptions))
+RETURN
+DIVIDE(
+    CALCULATE(COUNTROWS(Subscriptions), ALLEXCEPT(Subscriptions, Subscriptions[plan_type])),
+    TotalSubs,
+    0
+)
+
+
+
+
+
+
+
+
+
+
+
+
+RetentionRate = 
+VAR Cohort = 
+    CALCULATETABLE(
+        VALUES(Subscriptions[user_id]),
+        FILTER(
+            Subscriptions,
+            Subscriptions[start_date] >= DATE(2023,1,1) &&
+            Subscriptions[start_date] <= DATE(2023,3,31)
+        )
+    )
+VAR Retained = 
+    CALCULATETABLE(
+        VALUES(Subscriptions[user_id]),
+        FILTER(
+            Subscriptions,
+            Subscriptions[start_date] >= DATE(2023,4,1) &&
+            Subscriptions[start_date] <= DATE(2023,6,30)
+        )
+    )
+VAR RetainedUsers = COUNTROWS(INTERSECT(Cohort, Retained))
+VAR TotalCohort = COUNTROWS(Cohort)
+RETURN
+DIVIDE(RetainedUsers, TotalCohort, 0)
+
+
+RevenueImpact = 
+VAR PlanValues = 
+    ADDCOLUMNS(
+        Subscriptions,
+        "Revenue",
+        SWITCH(
+            Subscriptions[plan_type],
+            "Basic", 9.99,
+            "Premium", 19.99,
+            "Pro", 29.99,
+            0
+        )
+    )
+RETURN
+SUMX(PlanValues, [Revenue])
+
+
+UserLTV = 
+VAR UserSubs = 
+    ADDCOLUMNS(
+        SUMMARIZE(
+            Subscriptions,
+            Subscriptions[user_id],
+            "TotalSubs", COUNTROWS(Subscriptions),
+            "AvgDuration", AVERAGEX(Subscriptions, DATEDIFF(Subscriptions[start_date], Subscriptions[end_date], DAY))
+        ),
+        "LTV",
+        [TotalSubs] * [AvgDuration] * 0.5
+    )
+RETURN
+AVERAGEX(UserSubs, [LTV])
+
+
+
+
+
+
