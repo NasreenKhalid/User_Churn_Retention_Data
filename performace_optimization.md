@@ -49,9 +49,9 @@ Now each measure gets its own page or section.
 ### ActiveSubscriptions
 Business Question
 
-How many subscriptions were active during the selected period?
+* How many subscriptions were active during the selected period?
 
-Original Measure
+### Original Measure
 
 ActiveSubscriptions = 
 CALCULATE(
@@ -69,90 +69,80 @@ Keeps only rows where:
 start_date is before or on the selected end date.
 end_date is after or on the selected start date.
 Those subscriptions overlap the selected period and are considered active.
-Performance Review
+### Performance Review
 
-Original:
+### Original:
 
-FILTER(...)
+Uses FILTER(...)
 
-Observation:
+### Observation:
 
 FILTER() iterates over the table row by row.
 
-Optimization:
+### Optimization:
 
 CALCULATE(
-COUNTROWS(...),
-Subscriptions[start_date] <= MAX(...),
-Subscriptions[end_date] >= MIN(...)
+    COUNTROWS(Subscriptions),
+    Subscriptions[start_date] <= MAX(DateTable[Date]),
+    Subscriptions[end_date] >= MIN(DateTable[Date])
 )
 
-Reason:
+### Reason:
 
 Simple filter arguments allow the storage engine to optimize the query more efficiently.
 
-Status:
+#### Status:
 
 ✅ Optimized
 
-AvgSubscriptionDuration
+#### AvgSubscriptionDuration
 
-Business Question
+* Business Question
 
-What is the average subscription duration?
+* What is the average subscription duration?
 
-Original
+### Original
 
 AVERAGEX(...)
 
-Observation
+### Observation
 
 DATEDIFF() is computed for every row every time the measure is evaluated.
 
-Optimization Idea
+### Optimization Idea
 
-Create a calculated column:
+* Create a calculated column:
 
 SubscriptionDuration =
 DATEDIFF(start_date,end_date,DAY)
 
-New measure:
+### New measure:
 
 Average Duration =
 AVERAGE(Subscriptions[SubscriptionDuration])
 
-Reason
+### Reason
 
 The duration is calculated once during data refresh instead of every query.
 
-Status
+### Status
 
 ✅ Optimized
 
-Do this for every measure.
 
-Performance Log
-
-This is the fun part.
-
-Measure	Before	After	Reason
-ActiveSubscriptions	FILTER	Direct filter arguments	Better storage engine optimization
-AvgSubscriptionDuration	AVERAGEX	AVERAGE(Column)	Precomputed values
 RevenueImpact	SWITCH	Dimension Table	Better model design
 Lessons Learned
 
-Every optimization teaches something.
+### Every optimization teaches something.
 
-Example
-
-Lesson 1
+### Lesson 1
 
 Prefer direct filter arguments inside CALCULATE() over wrapping everything in FILTER() when the logic is simple.
 
-Lesson 2
+### Lesson 2
 
 Static calculations are often better as calculated columns than repeated measure computations.
 
-Lesson 3
+### Lesson 3
 
 Business attributes like plan prices belong in dimension tables instead of hard-coded SWITCH() statements.
