@@ -1,8 +1,8 @@
 ## Subscriber Analytics Dashboard – Optimization Journal
 # Project Summary
-Dataset: ~94,000 subscriptions
-Tool: Power BI
-Goal: Analyze subscriptions, churn, retention, revenue and optimize report performance.
+- Dataset: ~94,000 subscriptions
+- Tool: Power BI
+- Goal: Analyze subscriptions, churn, retention, revenue and optimize report performance.
 Model Review
 Fact Table
 
