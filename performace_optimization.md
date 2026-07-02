@@ -130,7 +130,19 @@ The duration is calculated once during data refresh instead of every query.
 ✅ Optimized
 
 
-RevenueImpact	SWITCH	Dimension Table	Better model design
+### RevenueImpact Measure
+## SWITCH	Dimension Table	Better model design
+
+Added a Plan_Price column in subscriptions_balanced_94k table which is related to plan_types[Price] column
+and then created the Plan_Price measure as:
+Price =
+RELATED(PlanTypes[PlanPrice])
+
+so now if plan type price changes, no need to edit every row of subscriptions table, just one edit in plan_types table
+
+### Status
+
+✅ Optimized
 Lessons Learned
 
 ### Every optimization teaches something.
