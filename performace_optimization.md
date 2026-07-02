@@ -175,7 +175,53 @@ SUM(Subscriptions[Price])
 ### Status
 
 ✅ Optimized
-Lessons Learned
+
+## UserLTV Measure Optimization
+Earlier there were complex calculations as:
+UserLTV = 
+VAR UserSubs = 
+    ADDCOLUMNS(
+        SUMMARIZE(
+            Subscriptions,
+            Subscriptions[user_id],
+            "TotalSubs", COUNTROWS(Subscriptions),
+            "AvgDuration", AVERAGEX(Subscriptions, DATEDIFF(Subscriptions[start_date], Subscriptions[end_date], DAY))
+        ),
+        "LTV",
+        [TotalSubs] * [AvgDuration] * 0.5
+    )
+RETURN
+AVERAGEX(UserSubs, [LTV])
+
+Updated them to stop creating many virtual tables, instead calculate UserLTV directly as:
+UserLTV =
+AVERAGEX(
+    VALUES(Subscriptions[user_id]),
+    CALCULATE(COUNTROWS(Subscriptions))
+        *
+    CALCULATE(AVERAGE(Subscriptions[SubscriptionDuration]))
+        *
+    0.5
+)
+
+### Why is this better?
+ 
+
+* Instead of Build a temporary table, add columns, then average...
+
+
+
+* Iterate over each unique user and calculate the LTV directly.
+
+It's:
+
+* ✅ shorter
+* ✅ easier to read
+* ✅ avoids SUMMARIZE and ADDCOLUMNS
+* ✅ uses the precomputed SubscriptionDuration
+
+
+### Lessons Learned
 
 ### Every optimization teaches something.
 
