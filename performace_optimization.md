@@ -131,14 +131,46 @@ The duration is calculated once during data refresh instead of every query.
 
 
 ### RevenueImpact Measure
-## SWITCH Dimension Table	Better model design
+## Original
+
+Revenue was calculated using:
+
+* SWITCH()
+* ADDCOLUMNS()
+* SUMX()
+* Basic → 9.99
+* Premium → 19.99
+* Pro → 29.99
+Each time the report refreshed, Power BI checked for every subscription out of all plan types.
+
+#### Optimization:
+* Created a PlanTypes dimension table with a Price column.
+
+* Created a relationship:
+* PlanTypes[PlanName]
+      ↓
+Subscriptions[plan_type]
 
 * Added a Plan_Price column in subscriptions_balanced_94k table which is related to plan_types[Price] column
 and then created the Plan_Price measure as:
 Price =
 RELATED(PlanTypes[PlanPrice])
 
-so now if plan type price changes, no need to edit every row of subscriptions table, just one edit in plan_types table
+* New measure
+RevenueImpact =
+SUM(Subscriptions[Price])
+
+* Why is this better?
+
+* ✅ Cleaner DAX
+
+* ✅ Centralized business logic
+
+* ✅ Easier maintenance
+
+* If the Premium plan price changes, only one value in PlanTypes needs to be updated.
+
+* No measures need to change.
 
 ### Status
 
